@@ -1,0 +1,4 @@
+streamlit
+playwright
+sqlalchemy
+psycopg2-binary
