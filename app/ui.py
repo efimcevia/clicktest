@@ -1,51 +1,68 @@
 import streamlit as st
 import json
 from app import state, logic
+from datetime import datetime
 
-def step_form():
-    with st.form("step_form"):
-        st.subheader("➕ Добавить шаги")
-        step_type = st.selectbox("Тип шага", ["goto", "click", "fill", "wait_for", "screenshot"])
-        selector = st.text_input("Селектор (если нужно)", "")
-        value = st.text_input("Значение (URL, текст, время и т.п.)", "")
-        submitted = st.form_submit_button("Добавить шаг")
+def add_step_form():
+    st.subheader("➕ Добавить шаг")
 
-        if submitted:
+    with st.container():
+        step_type = st.selectbox("Тип шага", ["goto", "click", "fill"], key="step_type")
+        selector = ""
+        value = ""
+
+        if step_type == "goto":
+            value = st.text_input("URL", key="step_value")
+        else:
+            selector = st.text_input("CSS селектор", key="step_selector")
+            if step_type == "fill":
+                value = st.text_input("Значение", key="step_value")
+
+        if st.button("Добавить шаг"):
             step = {"type": step_type}
             if selector:
                 step["selector"] = selector
             if value:
                 step["value"] = value
             state.add_step(step)
-            st.success("Шаг добавлен!")
+            st.success("Шаг добавлен")
 
-def step_view():
+def view_steps():
     st.subheader("🧾 Шаги сценария")
     steps = state.get_steps()
 
     if not steps:
         st.info("Шаги пока не добавлены.")
-    else:
-        for step in steps:
-            st.code(json.dumps(step, indent=2), language="json")
+        return
 
-        # Форма сохранения прямо здесь
-        with st.form("save_scenario_form"):
-            name = st.text_input("Название сценария", key="save_scenario_name")
-            submitted = st.form_submit_button("Сохранить сценарий")
+    for i, step in enumerate(steps, start=1):
+        st.code(json.dumps(step, indent=2), language="json")
 
-            if submitted:
-                if not name:
-                    st.warning("Введите название сценария.")
-                else:
-                    ok, err = logic.save_scenario(name, steps)
-                    if ok:
-                        st.success("Сценарий сохранён!")
-                    else:
-                        st.error(err)
+    if st.button("🗑 Очистить шаги"):
+        state.clear_steps()
+        st.success("Шаги очищены")
 
-        if st.button("Очистить шаги"):
+def save_scenario_form():
+    st.subheader("💾 Сохранить сценарий")
+    steps = state.get_steps()
+
+    if not steps:
+        st.info("Добавьте хотя бы один шаг перед сохранением.")
+        return
+
+    name = st.text_input("Название сценария", key="scenario_name_input")
+
+    if st.button("Сохранить сценарий"):
+        if not name.strip():
+            st.warning("Введите название сценария.")
+            return
+
+        ok, err = logic.save_scenario(name.strip(), steps)
+        if ok:
+            st.success(f"Сценарий «{name}» сохранён!")
             state.clear_steps()
+        else:
+            st.error(err or "Ошибка при сохранении.")
 
 
 def select_scenario():

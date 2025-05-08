@@ -1,8 +1,11 @@
 import streamlit as st
-from app import ui, state
+import json
+from app import ui, state, logic
 
-st.title("🛠 Конструкsdsdтор сценария")
+# st.title("🛠 Конструктор сценария")
 state.init_state()
 # ui.export_scenario()
-ui.step_form()
-ui.step_view()
+
+ui.add_step_form()
+ui.view_steps()
+ui.save_scenario_form()
