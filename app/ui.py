@@ -78,3 +78,21 @@ def select_scenario():
             state.add_step(step)
         return s
     return None
+
+def delete_scenario_button():
+    scenario = state.get_selected_scenario()
+
+    if not scenario:
+        st.info("Сценарий не выбран.")
+        return
+
+    st.warning(f"Удалить сценарий «{scenario.name}»? Это действие необратимо.")
+
+    if st.button("❌ Удалить сценарий"):
+        ok, err = logic.delete_scenario(scenario.id)
+        if ok:
+            st.success("Сценарий удалён.")
+            state.set_selected_scenario(None)
+            state.clear_steps()
+        else:
+            st.error(err or "Ошибка при удалении.")

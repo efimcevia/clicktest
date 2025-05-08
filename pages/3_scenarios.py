@@ -22,3 +22,5 @@ if steps and st.button("🚀 Выполнить сценарий"):
         st.error(f"Ошибка: {str(e)}")
         if selected_scenario:
             logic.save_run(selected_scenario.id, "fail")
+
+ui.delete_scenario_button()

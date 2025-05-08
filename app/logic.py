@@ -34,3 +34,17 @@ def save_run(scenario_id: int, status: str):
 
 def get_runs(scenario_id: int):
     return db.query(TestRun).filter_by(scenario_id=scenario_id).order_by(TestRun.timestamp.desc()).all()
+
+def delete_scenario(scenario_id: int):
+    db = SessionLocal()
+    try:
+        scenario = db.query(Scenario).filter(Scenario.id == scenario_id).first()
+        if not scenario:
+            return False, "Сценарий не найден."
+
+        db.delete(scenario)
+        db.commit()
+        return True, None
+    except SQLAlchemyError as e:
+        db.rollback()
+        return False, f"Ошибка при удалении: {str(e)}"
