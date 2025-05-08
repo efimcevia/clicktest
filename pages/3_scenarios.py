@@ -1,13 +1,13 @@
 import streamlit as st
 from app import ui, logic, runner, state
+import streamlit as st
+import sqlalchemy as sa
+from sqlalchemy.orm import sessionmaker
 from pathlib import Path
 
 st.title("📋 Сценарии")
 state.init_state()
-
-selected_scenario = ui.select_scenario()
-state.set_selected_scenario(selected_scenario)
-
+ui.search_and_display_scenarios()
 steps = state.get_steps()
 
 if steps and st.button("🚀 Выполнить сценарий"):
