@@ -1,21 +1,4 @@
-
-
 services:
-  app:
-    build: .
-    ports:
-      - "8501:8501"
-    volumes:
-      - .:/app                 
-    depends_on:
-      - db
-    environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: pass
-      POSTGRES_DB: clicktest
-      DB_HOST: db
-      DB_PORT: 5432
-
   db:
     image: postgres:15
     restart: always
@@ -23,6 +6,8 @@ services:
       POSTGRES_USER: user
       POSTGRES_PASSWORD: pass
       POSTGRES_DB: clicktest
+    ports:
+      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
 

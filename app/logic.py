@@ -1,20 +1,25 @@
-from database import SessionLocal
-from models import Scenario, TestRun
-from sqlalchemy.exc import IntegrityError
+from database import SessionLocal, Base
+from app.models import Scenario, TestRun
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
 import json
 
 db = SessionLocal()
 
 def save_scenario(name: str, steps: list):
-    scenario = Scenario(name=name, steps_json=json.dumps(steps))
     try:
+        scenario = Scenario(name=name, steps_json=json.dumps(steps))
         db.add(scenario)
         db.commit()
         return True, None
+
     except IntegrityError:
         db.rollback()
         return False, "Сценарий с таким именем уже существует!"
+
+    except SQLAlchemyError as e:
+        db.rollback()
+        return False, f"Ошибка базы данных: {str(e)}"
 
 def get_all_scenarios():
     return db.query(Scenario).order_by(Scenario.created_at.desc()).all()
