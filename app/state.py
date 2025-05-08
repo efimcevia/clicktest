@@ -1,6 +1,7 @@
 import streamlit as st
 
 def init_state():
+    st.session_state.steps = []
     if "steps" not in st.session_state:
         st.session_state.steps = []
     if "selected_scenario" not in st.session_state:

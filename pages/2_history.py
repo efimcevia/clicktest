@@ -15,3 +15,5 @@ def render():
     else:
         for run in runs:
             st.write(f"{run.timestamp.strftime('%Y-%m-%d %H:%M:%S')} — {run.status}")
+
+render()
