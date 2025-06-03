@@ -1,22 +1,25 @@
-from playwright.sync_api import sync_playwright
-import time
+import subprocess
+import json
+import streamlit as st
 
 def run_steps(steps: list):
-    with sync_playwright() as p:
-        browser = p.chromium.launch(headless=True)
-        page = browser.new_page()
+    try:
+        process = subprocess.Popen(
+            ["python", "playwright_runner_cli.py"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+        stdout, stderr = process.communicate(input=json.dumps(steps))
 
-        for step in steps:
-            t = step["type"]
-            if t == "goto":
-                page.goto(step["value"])
-            elif t == "click":
-                page.click(step["selector"])
-            elif t == "fill":
-                page.fill(step["selector"], step["value"])
-            elif t == "wait_for":
-                time.sleep(float(step["value"]))
-            elif t == "screenshot":
-                page.screenshot(path="screenshot.png")
+        if process.returncode == 0:
+            st.success("Сценарий выполнен!")
+            st.image("screenshot.png", caption="Скриншот (если был)")
+        else:
+            st.error("Произошла ошибка при выполнении:")
+            st.code(stderr)
 
-        browser.close()
+    except Exception as e:
+        st.error("Критическая ошибка:")
+        st.exception(e)

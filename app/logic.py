@@ -1,5 +1,5 @@
 from database import SessionLocal, Base
-from app.models import Scenario, TestRun
+from app.models import Scenario, TestRun, Screenshot
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
 import json
@@ -31,6 +31,7 @@ def save_run(scenario_id: int, status: str):
     run = TestRun(scenario_id=scenario_id, status=status, timestamp=datetime.utcnow())
     db.add(run)
     db.commit()
+    return run.id
 
 def get_runs(scenario_id: int):
     return db.query(TestRun).filter_by(scenario_id=scenario_id).order_by(TestRun.timestamp.desc()).all()
@@ -48,3 +49,12 @@ def delete_scenario(scenario_id: int):
     except SQLAlchemyError as e:
         db.rollback()
         return False, f"Ошибка при удалении: {str(e)}"
+
+def save_screenshot(object_id: int, object_type: str, path: str):
+    screenshot = Screenshot(
+        object_id=object_id,
+        object_type=object_type,
+        file_path=path
+    )
+    db.add(screenshot)
+    db.commit()

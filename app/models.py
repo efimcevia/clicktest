@@ -23,3 +23,12 @@ class TestRun(Base):
     timestamp = Column(DateTime, default=datetime.utcnow)
 
     scenario = relationship("Scenario", back_populates="runs")
+
+
+class Screenshot(Base):
+    __tablename__ = "screenshots"
+    id = Column(Integer, primary_key=True)
+    object_id = Column(Integer, nullable=False)
+    object_type = Column(String, nullable=False)
+    file_path = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
