@@ -54,7 +54,27 @@ def add_step_form():
     st.subheader("➕ Добавить шаг")
 
     with st.container():
-        step_type = st.selectbox("Тип шага", ["goto", "click", "fill", "screenshot"], key="step_type")
+        SUPPORTED_STEP_TYPES = [
+            "goto",
+            "click",
+            "fill",
+            "wait_for",
+            "wait_for_selector",
+            "press",
+            "type",
+            "hover",
+            "check",
+            "uncheck",
+            "select_option",
+            "screenshot",
+            "get_text",
+            "get_attribute",
+            "wait_for_url",
+            "eval",
+            "upload_file",
+            "download"
+        ]
+        step_type = st.selectbox("Тип шага", SUPPORTED_STEP_TYPES, key="step_type")
         selector = ""
         value = ""
 
