@@ -1,11 +1,9 @@
 import streamlit as st
 
 def init_state():
-    st.session_state.steps = []
     if "steps" not in st.session_state:
-        st.session_state.steps = []
-    if "selected_scenario" not in st.session_state:
-        st.session_state.selected_scenario = None
+        st.session_state["steps"] = []
+
 
 def add_step(step: dict):
     st.session_state.steps.append(step)

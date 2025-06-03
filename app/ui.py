@@ -1,12 +1,8 @@
 import streamlit as st
 import json
+from app import state, logic
+from datetime import datetime
 import datetime
-import os
-import sqlalchemy as sa
-from sqlalchemy.orm import sessionmaker
-from app import ui, logic, runner, state
-from pathlib import Path
-
 
 def export_scenario():
     steps = state.get_steps()
@@ -54,104 +50,103 @@ def import_scenario():
         except json.JSONDecodeError:
             st.error("Ошибка чтения JSON. Проверьте файл.")
 
-def step_form():
-    with st.form("step_form"):
-        st.subheader("➕ Добавить шаги")
-        step_type = st.selectbox("Тип шага", ["goto", "click", "fill", "wait_for", "screenshot"])
-        selector = st.text_input("Селектор (если нужно)", "")
-        value = st.text_input("Значение (URL, текст, время и т.п.)", "")
-        submitted = st.form_submit_button("Добавить шаг")
+def add_step_form():
+    st.subheader("➕ Добавить шаг")
 
-        if submitted:
+    with st.container():
+        step_type = st.selectbox("Тип шага", ["goto", "click", "fill","cwait_for","screenshot"], key="step_type")
+        selector = ""
+        value = ""
+
+        if step_type == "goto":
+            value = st.text_input("URL", key="step_value")
+        else:
+            selector = st.text_input("CSS селектор", key="step_selector")
+            if step_type == "fill":
+                value = st.text_input("Значение", key="step_value")
+
+        if st.button("Добавить шаг"):
             step = {"type": step_type}
             if selector:
                 step["selector"] = selector
             if value:
                 step["value"] = value
             state.add_step(step)
-            st.success("Шаг добавлен!")
+            st.success("Шаг добавлен")
 
-def step_view():
+def view_steps():
     st.subheader("🧾 Шаги сценария")
     steps = state.get_steps()
 
     if not steps:
         st.info("Шаги пока не добавлены.")
-    else:
-        for step in steps:
-            st.code(json.dumps(step, indent=2), language="json")
-
-        # Форма сохранения прямо здесь
-        with st.form("save_scenario_form"):
-            name = st.text_input("Название сценария", key="save_scenario_name")
-            submitted = st.form_submit_button("Сохранить сценарий")
-
-            if submitted:
-                if not name:
-                    st.warning("Введите название сценария.")
-                else:
-                    ok, err = logic.save_scenario(name, steps)
-                    if ok:
-                        st.success("Сценарий сохранён!")
-                    else:
-                        st.error(err)
-
-        if st.button("Очистить шаги"):
-            state.clear_steps()
-
-def search_and_display_scenarios():
-    # Поле поиска
-    search_query = st.text_input("Поиск по названию", "")
-    
-    # Функция для поиска и отображения сценариев
-    def fetch_and_display_scenarios(query: str):
-        with Session() as session:
-            results = session.execute(
-                sa.text("SELECT * FROM scenarios WHERE LOWER(name) LIKE LOWER(:query)"),
-                {"query": f'%{query}%'}
-            ).fetchall()
-        
-        if results:
-            scenario_buttons = [scenario.name for scenario in results]
-            selected_scenario_name = st.radio("Найденные сценарии:", scenario_buttons)
-            
-            # Загружаем выбранный сценарий
-            if selected_scenario_name:
-                selected_scenario = next(s for s in results if s.name == selected_scenario_name)
-                state.set_selected_scenario(selected_scenario)
-        else:
-            st.write("Сценарии не найдены.")
-
-    # Выполняем поиск при изменении поля
-    if search_query:
-        fetch_and_display_scenarios(search_query)
-    else:
-        selected_scenario = ui.select_scenario()
-        state.set_selected_scenario(selected_scenario)
-
-    # Получаем шаги
-    steps = state.get_steps()
-
-def history_render():
-
-    st.header("📈 История запусков")
-    selected_scenario = state.get_selected_scenario()
-    if not selected_scenario:
-        st.info("Сначала выбери сценарий в разделе '📋 Сценарии'")
         return
 
-    runs = logic.get_runs(selected_scenario.id)
-    if not runs:
-        st.write("Запусков пока нет.")
-    else:
-        for run in runs:
-            st.write(f"{run.timestamp.strftime('%Y-%m-%d %H:%M:%S')} — {run.status}")
+    for i, step in enumerate(steps, start=1):
+        st.code(json.dumps(step, indent=2), language="json")
+        if st.button(f"✏️ Редактировать шаг {i}", key=f"edit_step_{i}"):
+            edit_step_form(i - 1)  # Передаем индекс для редактирования
 
-   
+    if st.button("🗑 Очистить шаги"):
+        state.clear_steps()
+        st.success("Шаги очищены")
+
+def edit_step_form(step_index):
+    steps = state.get_steps()
+    
+    if step_index < 0 or step_index >= len(steps):
+        return
+
+    st.subheader(f"✏️ Редактировать шаг {step_index + 1}")
+
+    step = steps[step_index]
+    step_type = step.get("type")
+    selector = step.get("selector", "")
+    value = step.get("value", "")
+
+    with st.container():
+        step_type = st.selectbox("Тип шага", ["goto", "click", "fill","cwait_for","screenshot"], index=["goto", "click", "fill","cwait_for","screenshot"].index(step_type), key=f"step_type_edit_{step_index}")
+        selector = st.text_input("CSS селектор", selector, key=f"step_selector_edit_{step_index}")
+        if step_type == "fill":
+            value = st.text_input("Значение", value, key=f"step_value_edit_{step_index}")
+        elif step_type == "goto":
+            value = st.text_input("URL", value, key=f"step_value_edit_{step_index}")
+
+        if st.button("Сохранить изменения", key=f"save_edit_step_{step_index}"):
+            updated_step = {"type": step_type}
+            if selector:
+                updated_step["selector"] = selector
+            if value:
+                updated_step["value"] = value
+            state.update_step(step_index, updated_step)  # Обновляем шаг в состоянии
+            st.success("Шаг обновлён!")
+
+def save_scenario_form():
+    st.subheader("💾 Сохранить сценарий")
+    steps = state.get_steps()
+
+    if not steps:
+        st.info("Добавьте хотя бы один шаг перед сохранением.")
+        return
+
+    name = st.text_input("Название сценария", key="scenario_name_input")
+
+    if st.button("Сохранить сценарий"):
+        if not name.strip():
+            st.warning("Введите название сценария.")
+            return
+
+        ok, err = logic.save_scenario(name.strip(), steps)
+        if ok:
+            st.success(f"Сценарий «{name}» сохранён!")
+            state.clear_steps()
+        else:
+            st.error(err or "Ошибка при сохранении.")
+
 def select_scenario():
     scenarios = logic.get_all_scenarios()
     names = [s.name for s in scenarios]
-    selected_name = st.selectbox("Сценарии", ["<Создать новый>"] + names, key="scenario_selector")
+    selected_name = st.selectbox("Сценарии", [""] + names)
 
     if selected_name != "<Создать новый>":
         s = logic.get_scenario_by_name(selected_name)
@@ -161,19 +156,3 @@ def select_scenario():
             state.add_step(step)
         return s
     return None
-
-# Основная часть Streamlit приложения
-def main():
-    st.title("Конструктор сценариев")
-
-    # Отображаем элементы интерфейса
-    export_scenario()  # Кнопка для экспорта сценария
-    import_scenario()  # Кнопка для импорта сценария
-    step_form()
-    step_view()        # Отображение шагов сценария
-    select_scenario()  # Выбор сценария
-
-if __name__ == "__main__":
-    main()
-
-
