@@ -1,5 +1,5 @@
 from database import SessionLocal, Base
-from app.models import Scenario, TestRun, Screenshot
+from app.models import Scenario, TestRun, Screenshot, TestCaseResult
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from datetime import datetime
 import json
@@ -27,8 +27,8 @@ def get_all_scenarios():
 def get_scenario_by_name(name: str):
     return db.query(Scenario).filter_by(name=name).first()
 
-def save_run(scenario_id: int, status: str):
-    run = TestRun(scenario_id=scenario_id, status=status, timestamp=datetime.utcnow())
+def save_run(scenario_id: int, status: str, tester=None):
+    run = TestRun(scenario_id=scenario_id, status=status, timestamp=datetime.utcnow(), tester_name=tester)
     db.add(run)
     db.commit()
     return run.id
@@ -58,3 +58,34 @@ def save_screenshot(object_id: int, object_type: str, path: str):
     )
     db.add(screenshot)
     db.commit()
+
+def get_all_test_runs():
+    db = SessionLocal()
+    return db.query(TestRun).order_by(TestRun.timestamp.desc()).all()
+
+def save_run_with_cases(scenario_id, case_list: list):
+    db = SessionLocal()
+    try:
+        run = TestRun(scenario_id=scenario_id)
+        db.add(run)
+        db.flush()  # получим run.id
+
+        for case in case_list:
+            case_obj = TestCaseResult(
+                run_id=run.id,
+                title=case["title"],
+                description=case["desc"],
+                status=case["status"],
+                duration=case["time"]
+            )
+            db.add(case_obj)
+
+        db.commit()
+        return True, run.id
+    except Exception as e:
+        db.rollback()
+        return False, str(e)
+
+def get_test_run_by_id(run_id: int):
+    db = SessionLocal()
+    return db.query(TestRun).filter_by(id=run_id).first()

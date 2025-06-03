@@ -12,12 +12,16 @@ state.init_state()
 selected_scenario = ui.select_scenario()
 state.set_selected_scenario(selected_scenario)
 
+tester_name = st.text_input("👤 Тестировщик")
 steps = state.get_steps()
 
 if steps and st.button("🚀 Выполнить сценарий"):
     try:
         # Запуск сценария
-        runner.run_steps_safe(steps)
+        results = runner.run_steps_safe(steps)
+
+        if results:
+            logic.save_run_with_cases(selected_scenario.id, results)
 
         # Проверка скриншота
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -28,7 +32,7 @@ if steps and st.button("🚀 Выполнить сценарий"):
         screenshot_path = str(output_path)
 
         if selected_scenario:
-            run_id = logic.save_run(selected_scenario.id, "success")
+            run_id = logic.save_run(selected_scenario.id, "success", tester=tester_name)
 
             if screenshot_path:
                 logic.save_screenshot(run_id, "TestRun", screenshot_path)
@@ -36,6 +40,6 @@ if steps and st.button("🚀 Выполнить сценарий"):
     except Exception as e:
         st.error(f"Ошибка: {str(e)}")
         if selected_scenario:
-            logic.save_run(selected_scenario.id, "fail")
+            logic.save_run(selected_scenario.id, "fail", tester=tester_name)
 
 ui.delete_scenario_button()

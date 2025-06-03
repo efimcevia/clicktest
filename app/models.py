@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, Text, ForeignKey, Float
 from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
@@ -21,8 +21,23 @@ class TestRun(Base):
     scenario_id = Column(Integer, ForeignKey("scenarios.id"))
     status = Column(String)
     timestamp = Column(DateTime, default=datetime.utcnow)
+    tester_name = Column(String, default=None)
 
     scenario = relationship("Scenario", back_populates="runs")
+    test_cases = relationship("TestCaseResult", back_populates="run", cascade="all, delete-orphan")
+
+class TestCaseResult(Base):
+    __tablename__ = "test_case_results"
+
+    id = Column(Integer, primary_key=True)
+    run_id = Column(Integer, ForeignKey("testruns.id"))
+    title = Column(String)
+    description = Column(String)
+    status = Column(String)
+    duration = Column(Float)
+
+    run = relationship("TestRun", back_populates="test_cases")
+
 
 
 class Screenshot(Base):

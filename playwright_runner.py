@@ -14,12 +14,19 @@ def run_steps(steps: list):
         stdout, stderr = process.communicate(input=json.dumps(steps))
 
         if process.returncode == 0:
-            st.success("Сценарий выполнен!")
-            st.image("screenshot.png", caption="Скриншот (если был)")
+            try:
+                results = json.loads(stdout)
+                return results
+            except json.JSONDecodeError:
+                st.error("Ошибка парсинга ответа от runner.")
+                st.code(stdout)
+                return []
         else:
             st.error("Произошла ошибка при выполнении:")
             st.code(stderr)
+            return []
 
     except Exception as e:
         st.error("Критическая ошибка:")
         st.exception(e)
+        return []
